@@ -10,6 +10,8 @@ const whitelist = [
   "http://localhost:3000",
   "http://localhost:5000/",
   "http://localhost:3000/",
+  "https://seadev.seateklab.vn/",
+  "https://seadev.seateklab.vn",
 ];
 
 const isOriginAllowed = (origin) => {
@@ -35,8 +37,8 @@ const corsConfig = {
 const app = express();
 app.use(express.json());
 app.use(bodyParser.json({limit: '1mb', type: 'application/json'}));
-app.use(bodyParser.urlencoded({ extended: true, limit: "1mb" }));
-app.use(cors(corsConfig));
+app.use(bodyParser.urlencoded({ extended: true, limit: "100kb" }));
+app.use(cors());
 app.use(helmet());
 app.use(morgan('tiny'));
 
