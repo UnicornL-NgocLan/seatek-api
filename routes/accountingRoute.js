@@ -14,8 +14,11 @@ const limiter = rateLimit({
     res.status(429).send({
         status: 500,
         message: 'Quá nhiều yêu cầu được gửi! Vui lòng thử lại sau ít phút',
-    });
-    },
+    });},
+    validate: {
+		xForwardedForHeader: false,
+		default: true,
+	},
 })
 
 router.get("/calculate-accounting-report-lines",limiter,authenticateKey,accountingDataCtrl.calculateAccountingReportLine);
