@@ -97,7 +97,8 @@ const accountingDataCtrl = {
             const queryForReportLineDetail = `
                 select 
                     vrl.id,
-                    vrl.type
+                    vrl.type,
+                    vrl.stt
                 from vn_report_line vrl
                 where vrl.company_id = $1
                 and vrl.report = $2
