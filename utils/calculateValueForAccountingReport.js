@@ -143,7 +143,7 @@ const calculatePSDU = async (pool,companyId,accountId,cta,date) => {
                     and amlc.cr_account_id = $2
                     and am.state = 'posted' 
                     and am.company_id = $3
-                    and aml.date <= $4
+                    and am.date <= $4
                 group by amlc.dr_account_id
             `
 
