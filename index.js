@@ -27,6 +27,7 @@ const corsConfig = {
     }
   },
   methods: "GET",
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };
 
