@@ -44,6 +44,7 @@ app.use(morgan('tiny'));
 
 //Routes
 app.use('/api',require('./routes/accountingRoute'));
+app.use('/api',require('./routes/employeeRoute'));
 
 
 const port = process.env.PORT || 5000
