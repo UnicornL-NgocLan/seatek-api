@@ -4,10 +4,10 @@ services:
       context: ../server
     environment:
       NODE_ENV: production
-      PGUSER: opensea_report
-      PGDATABASE: opensea12pro
-      PGPASSWORD: waFoQizYruJIHR9d
-      PGHOST: 172.16.1.210
+      PGUSER: lanle
+      PGDATABASE: opensea12pilot
+      PGPASSWORD: jIhDGqxntC
+      PGHOST: 113.161.52.34
       PGPORT: 5432
       PORT: 10001
       API_KEY_FOR_CALLING: 4234hds4-ih3492-49kqnf-a29g8r323a
