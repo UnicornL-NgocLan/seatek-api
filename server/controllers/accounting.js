@@ -1,4 +1,5 @@
 const Pool = require('pg').Pool;
+const _ = require('lodash');
 const dateIsValid = require("../utils/dateValidator")
 const {calculateDUNO,calculateDUCO,calculatePSCO,calculatePSNO,calculatePSDU,calculateDuNoByPartner,calculateDuCoByPartner} = require("../utils/calculateValueForAccountingReport")
 
@@ -18,10 +19,9 @@ const pool = new Pool(dbConfig);
 const accountingDataCtrl = {
     calculateAccountingReportLine: async (req,res) => {
         try {
-            // const {companyId} = req.body;
             const {companyId, reportType,date} = req.query;
             if(!companyId || !reportType || !date) return res.status(400).json({msg:"Vui lòng cung cấp đầy đủ thông tin"})
-            if(!Number.isInteger(parseInt(companyId)) || companyId <= 0) return res.status(400).json({msg:"Id của công ty phải là số nguyên dương"});
+            if(!_.isInteger(Number(companyId)) || companyId <= 0) return res.status(400).json({msg:"Id của công ty phải là số nguyên dương"});
             if(typeof reportType !== 'string') return res.status(400).json({msg:"Kiểu của báo cáo phải là kiểu chuỗi"});
             if(typeof reportType !== 'string' || !dateIsValid(date))  return res.status(400).json({msg:"Kiểu ngày phải là dạng YYYY/MM/DD"});
 
