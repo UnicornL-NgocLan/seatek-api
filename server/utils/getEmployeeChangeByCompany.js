@@ -66,7 +66,7 @@ const getEmployeeChangeByCompany = async (pool,companyId) => {
                     he.number_of_dependents as so_nguoi_phu_thuoc,
                     he.identification_id as so_cccd,
                     he.sea_id_issue_date as ngay_cap,
-                    he.sea_id_issue_place as noi_cap,
+                    riip.name as noi_cap,
                     a.seagroup_join_date as ngay_vao_seagroup_tv,
                     fcs.ngay_chinh_thuc_gia_nhap_sc as ngay_vao_seagroup_ct,
                     a.joining_date as ngay_vao_cty_thu_viec,
@@ -78,12 +78,12 @@ const getEmployeeChangeByCompany = async (pool,companyId) => {
                     tloc.name as so_hd,
                     tloc.date_start as ngay_ky_hop_dong,
                     tloc.date_end as ngay_het_han_hop_dong,
-                    a.employee_current_status as tinh_trang_lam_viec,
+                    case when a.employee_current_status = 'working' then 'Đang làm việc' else case when a.employee_current_status = 'leaving' then 'Nghỉ không lương' else case when a.employee_current_status = 'maternity_leave'then 'Nghỉ thai sản' else case when a.employee_current_status = 'sick_leave' then 'Nghỉ bệnh' else 'Nghỉ việc' end end end end as tinh_trang_lam_viec,
                     a.resignation_date as nghi_tu_ngay,
                     a.leaving_to_date as den_ngay,
                     concat(he.sea_permanent_addr,', ',rd.name,', ',rcs.name,', ',rc.name) as dia_chi_thuong_tru,
                     concat(he.sea_temp_addr,', ',rd2.name,', ',rcs2.name,', ',rc2.name) as dia_chi_tam_tru,
-                    he.mobile_phone as  dien_thoai_di_dong,
+                    coalesce(he.mobile_phone,he.main_phone_number) as  dien_thoai_di_dong,
                     he.sea_personal_email as email_ca_nhan,
                     he.work_email as email_cong_ty,
                     a.company_id as company_id,
@@ -103,6 +103,7 @@ const getEmployeeChangeByCompany = async (pool,companyId) => {
                     left join latest_official_contract_by_company loc on loc.employee_id = he.id
                     left join type_of_latest_contract_by_company tloc on tloc.employee_id = he.id
                     left join hr_contract_period hcp on hcp.id = tloc.contract_period_id
+                    left join res_id_issue_place riip on riip.id = he.id_issue_place
                 WHERE 
                     a.active = true 
                     and a.company_id = $4
