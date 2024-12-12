@@ -66,7 +66,7 @@ const getEmployeeChangeByCompany = async (pool,companyId) => {
                     he.number_of_dependents as so_nguoi_phu_thuoc,
                     he.identification_id as so_cccd,
                     he.sea_id_issue_date as ngay_cap,
-                    he.sea_id_issue_place as noi_cap,
+                    riip.name as noi_cap,
                     a.seagroup_join_date as ngay_vao_seagroup_tv,
                     fcs.ngay_chinh_thuc_gia_nhap_sc as ngay_vao_seagroup_ct,
                     a.joining_date as ngay_vao_cty_thu_viec,
@@ -103,6 +103,7 @@ const getEmployeeChangeByCompany = async (pool,companyId) => {
                     left join latest_official_contract_by_company loc on loc.employee_id = he.id
                     left join type_of_latest_contract_by_company tloc on tloc.employee_id = he.id
                     left join hr_contract_period hcp on hcp.id = tloc.contract_period_id
+                    left join res_id_issue_place riip on riip.id = he.id_issue_place
                 WHERE 
                     a.active = true 
                     and a.company_id = $4
