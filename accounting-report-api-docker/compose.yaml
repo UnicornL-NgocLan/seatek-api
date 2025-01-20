@@ -2,6 +2,7 @@ services:
   server:
     build:
       context: ../server
+    restart: always
     environment:
       NODE_ENV: production
       PGUSER: opensea_report
@@ -12,6 +13,6 @@ services:
       PORT: 10001
       API_KEY_FOR_CALLING: 4234hds4-ih3492-49kqnf-a29g8r323a
       EMPLOYEE_API_KEY: 42@j4hja-9194jka-942429ba-582ouqv1
-      
+
     ports:
       - 10001:10001
