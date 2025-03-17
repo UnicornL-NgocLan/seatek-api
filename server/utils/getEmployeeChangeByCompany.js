@@ -1,56 +1,52 @@
 const getEmployeeChangeByCompany = async (pool,companyId) => {
     try {
         const query = `
-                WITH first_official_contract_of_seagroup as (
-                    SELECT 
+                WITH first_official_contract_of_seagroup AS (
+                    SELECT DISTINCT ON (employee_id) 
                         employee_id, 
-                        MIN(date_start) AS ngay_chinh_thuc_gia_nhap_sc
+                        date_start AS ngay_chinh_thuc_gia_nhap_sc
                     FROM hr_contract
-                    WHERE 
-                        contract_category = 'contract'
-                        and type_id = 1
-                        and state not in ('draft')
-                        GROUP BY employee_id
+                    WHERE contract_category = 'contract'
+                        AND type_id = 1
+                        AND state NOT IN ('draft')
+                    ORDER BY employee_id, date_start
                 ),
 
-                first_official_contract_by_company as (
-                    SELECT 
+                first_official_contract_by_company AS (
+                    SELECT DISTINCT ON (employee_id) 
                         employee_id, 
-                        MIN(date_start) AS ngay_vao_cty_chinh_thuc
+                        date_start AS ngay_vao_cty_chinh_thuc
                     FROM hr_contract
-                    WHERE 
-                        contract_category = 'contract'
-                        and type_id = 1
-                        and state not in ('draft')
-                        and company_id = $1
-                        GROUP BY employee_id
+                    WHERE contract_category = 'contract'
+                        AND type_id = 1
+                        AND state NOT IN ('draft')
+                        AND company_id = $1
+                    ORDER BY employee_id, date_start
                 ),
 
-                latest_official_contract_by_company as (
-                    SELECT 
+                latest_official_contract_by_company AS (
+                    SELECT DISTINCT ON (employee_id) 
                         employee_id, 
-                        MAX(date_start) AS ngay_ky_hop_dong_gan_nhat
+                        id,
+                        date_start AS ngay_ky_hop_dong_gan_nhat
                     FROM hr_contract
-                    WHERE 
-                        contract_category = 'contract'
-                        and type_id = 1
-                        and state not in ('draft')
-                        and company_id = $2
-                    GROUP BY employee_id
+                    WHERE contract_category = 'contract'
+                        AND type_id = 1
+                        AND state NOT IN ('draft')
+                        AND company_id = $2
+                    ORDER BY employee_id, date_start DESC
                 ),
 
-                type_of_latest_contract_by_company as (
+                type_of_latest_contract_by_company AS (
                     SELECT
                         hc.employee_id,
-		                hc.name, 	
+                        hc.name, 	
                         hc.contract_period_id,
-   		                hc.date_start,
+                        hc.date_start,
                         hc.date_end
-                    FROM 
-                        hr_contract hc
-                    JOIN latest_official_contract_by_company loc on loc.employee_id = hc.employee_id and hc.date_start = loc.ngay_ky_hop_dong_gan_nhat
-                    WHERE hc.company_id = $3
-                    LIMIT 1
+                    FROM hr_contract hc
+                    JOIN latest_official_contract_by_company loc 
+                        ON loc.employee_id = hc.employee_id AND loc.id = hc.id
                 )
 
                 SELECT 
@@ -106,13 +102,14 @@ const getEmployeeChangeByCompany = async (pool,companyId) => {
                     left join res_id_issue_place riip on riip.id = he.id_issue_place
                 WHERE 
                     a.active = true 
-                    and a.company_id = $4
-                    and a.employee_current_status != 'resigned' 
+                    and a.primary_company = true 
+                    and a.company_id = $3
+                    and a.employee_current_status != 'resigned'
             `
 
             const preparedQuery = {
                 text: query,
-                values: [companyId,companyId,companyId,companyId]
+                values: [companyId,companyId,companyId]
             };
 
             const data = await pool.query(preparedQuery);
