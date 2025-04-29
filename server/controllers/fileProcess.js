@@ -22,11 +22,12 @@ const fileProcessCtrl = {
     } catch (error) {
       res.status(500).json({ msg: error.message });
     } finally {
-      // ❗ Cleanup: remove file after processing
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error("Failed to delete uploaded file:", err);
-        else console.log("Temporary file deleted.");
-      });
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error("Failed to delete uploaded file:", err);
+          else console.log("Temporary file deleted.");
+        });
+      }
     }
   },
 };
