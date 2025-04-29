@@ -6,11 +6,7 @@ const helmet = require("helmet");
 const bodyParser = require("body-parser");
 const hpp = require("hpp");
 
-const whitelist = [
-  "https://home.seacorp.vn/",
-  "https://home.seacorp.vn",
-  "http://localhost:3000",
-];
+const whitelist = ["https://home.seacorp.vn/", "https://home.seacorp.vn"];
 
 const isOriginAllowed = (origin) => {
   if (whitelist.indexOf(origin) !== -1) {
@@ -36,7 +32,7 @@ const app = express();
 app.use(express.json());
 app.use(bodyParser.json({ limit: "1mb", type: "application/json" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "100kb" }));
-app.use(cors(corsConfig));
+app.use(cors());
 app.use(helmet());
 app.use(hpp());
 app.use(morgan("tiny"));
