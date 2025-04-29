@@ -1,14 +1,15 @@
-require('dotenv').config()
-const morgan = require('morgan');
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const bodyParser = require('body-parser');
-const hpp = require('hpp');
+require("dotenv").config();
+const morgan = require("morgan");
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const bodyParser = require("body-parser");
+const hpp = require("hpp");
 
 const whitelist = [
   "https://home.seacorp.vn/",
-  "https://home.seacorp.vn"
+  "https://home.seacorp.vn",
+  "http://localhost:3000",
 ];
 
 const isOriginAllowed = (origin) => {
@@ -27,28 +28,26 @@ const corsConfig = {
     }
   },
   methods: "GET",
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
-
 const app = express();
 app.use(express.json());
-app.use(bodyParser.json({limit: '1mb', type: 'application/json'}));
+app.use(bodyParser.json({ limit: "1mb", type: "application/json" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "100kb" }));
 app.use(cors(corsConfig));
 app.use(helmet());
 app.use(hpp());
-app.use(morgan('tiny'));
-
+app.use(morgan("tiny"));
 
 //Routes
-app.use('/api',require('./routes/accountingRoute'));
-app.use('/api',require('./routes/employeeRoute'));
+app.use("/api", require("./routes/accountingRoute"));
+app.use("/api", require("./routes/employeeRoute"));
+app.use("/api", require("./routes/fileProcessRoute"));
 
+const port = process.env.PORT || 5000;
 
-const port = process.env.PORT || 5000
-
-app.listen(port, () => {  
+app.listen(port, () => {
   console.log("Server is listening on port", port);
 });
