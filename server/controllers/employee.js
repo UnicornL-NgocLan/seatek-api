@@ -119,7 +119,10 @@ const employeeCtrl = {
 
             const data = await pool.query(preparedQuery)
             const data2 = await retailPool.query(preparedQueryRetail)
-            res.status(200).json({ data: [...data.rows, ...data2.rows] })
+            res.status(200).json({
+                data: [...data.rows, ...data2.rows],
+                retailData: data2.rows,
+            })
         } catch (error) {
             res.status(500).json({ msg: error.message })
         }
