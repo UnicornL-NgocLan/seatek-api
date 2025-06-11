@@ -145,7 +145,7 @@ const getChangeQuantityByCompany = async (
                 and a.joining_date is not null 
                 and EXTRACT(MONTH FROM a.joining_date) = $2
                 and EXTRACT(YEAR FROM a.joining_date) = $3
-
+                and a.primary_company = true
             UNION ALL
 
             SELECT 
@@ -165,7 +165,7 @@ const getChangeQuantityByCompany = async (
                 and a.resignation_date is not null 
                 and EXTRACT(MONTH FROM a.resignation_date) = $5
                 and EXTRACT(YEAR FROM a.resignation_date) = $6
-
+                and a.primary_company = true
             UNION ALL
 
             SELECT 
@@ -184,7 +184,7 @@ const getChangeQuantityByCompany = async (
                 and a.employee_current_status = 'sick_leave' 
                 and a.resignation_date is not null
                 and a.resignation_date <= $8
-
+                and a.primary_company = true
             UNION ALL
 
             SELECT 
@@ -203,6 +203,7 @@ const getChangeQuantityByCompany = async (
                 and a.employee_current_status = 'maternity_leave' 
                 and a.resignation_date is not null
                 and a.resignation_date <= $10
+                and a.primary_company = true
 
             UNION ALL
 
@@ -219,6 +220,7 @@ const getChangeQuantityByCompany = async (
             WHERE 
                 a.active = true 
                 and a.company_id = $11
+                and a.primary_company = true
                 and a.employee_current_status = 'leaving' 
                 and a.resignation_date is not null 
                 and a.resignation_date <= $12
@@ -264,6 +266,7 @@ const getTotalEmployeeByCompany = async (pool, companyId, toDate) => {
                 and employee_current_status != 'resigned'
                 and a.joining_date is not null
                 and a.joining_date <= $2
+                and a.primary_company = true
                 )
                 or
                 (a.active = true
@@ -271,6 +274,7 @@ const getTotalEmployeeByCompany = async (pool, companyId, toDate) => {
                 and employee_current_status is not null
                 and employee_current_status != 'resigned'
                 and a.joining_date is null
+                and a.primary_company = true
                 )
             GROUP BY company_id
         `
