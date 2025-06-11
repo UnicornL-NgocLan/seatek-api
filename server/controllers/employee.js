@@ -164,33 +164,67 @@ const employeeCtrl = {
             }
 
             const { rows: companyList } = await pool.query(preparedQuery)
-            const apiLanes = [...companyList].map(async (com) => {
-                return getEmployeeChangeByCompany(pool, com.id)
-            })
+            const apiLanes = [...companyList]
+                .filter((i) => i.id !== 30)
+                .map(async (com) => {
+                    return getEmployeeChangeByCompany(pool, com.id)
+                })
 
-            const apiLanes2 = [...companyList].map(async (com) => {
-                return getChangeQuantityByCompany(
-                    pool,
-                    com.id,
-                    month,
-                    year,
-                    toDate
-                )
-            })
+            const apiLanes4 = [...companyList]
+                .filter((i) => i.id === 30)
+                .map(async (com) => {
+                    return getEmployeeChangeByCompany(retailPool, com.id)
+                })
 
-            const apiLanes3 = [...companyList].map(async (com) => {
-                return getTotalEmployeeByCompany(pool, com.id, toDate)
-            })
+            const apiLanes2 = [...companyList]
+                .filter((i) => i.id !== 30)
+                .map(async (com) => {
+                    return getChangeQuantityByCompany(
+                        pool,
+                        com.id,
+                        month,
+                        year,
+                        toDate
+                    )
+                })
+
+            const apiLanes5 = [...companyList]
+                .filter((i) => i.id === 30)
+                .map(async (com) => {
+                    return getChangeQuantityByCompany(
+                        retailPool,
+                        com.id,
+                        month,
+                        year,
+                        toDate
+                    )
+                })
+
+            const apiLanes3 = [...companyList]
+                .filter((i) => i.id !== 30)
+                .map(async (com) => {
+                    return getTotalEmployeeByCompany(pool, com.id, toDate)
+                })
+
+            const apiLanes6 = [...companyList]
+                .filter((i) => i.id === 30)
+                .map(async (com) => {
+                    return getTotalEmployeeByCompany(retailPool, com.id, toDate)
+                })
 
             const result = await Promise.all(apiLanes)
             const result2 = await Promise.all(apiLanes2)
             const result3 = await Promise.all(apiLanes3)
 
+            const result4 = await Promise.all(apiLanes4)
+            const result5 = await Promise.all(apiLanes5)
+            const result6 = await Promise.all(apiLanes6)
+
             res.status(200).json({
                 data: {
-                    employeeDetail: result,
-                    changeQuantity: result2,
-                    totalEmployee: result3,
+                    employeeDetail: [...result, ...result4],
+                    changeQuantity: [...result2, ...result5],
+                    totalEmployee: [...result3, ...result6],
                 },
             })
         } catch (error) {

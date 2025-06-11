@@ -1,4 +1,4 @@
-const getEmployeeChangeByCompany = async (pool,companyId) => {
+const getEmployeeChangeByCompany = async (pool, companyId) => {
     try {
         const query = `
                 WITH first_official_contract_of_seagroup AS (
@@ -107,19 +107,25 @@ const getEmployeeChangeByCompany = async (pool,companyId) => {
                     and a.employee_current_status != 'resigned'
             `
 
-            const preparedQuery = {
-                text: query,
-                values: [companyId,companyId,companyId]
-            };
+        const preparedQuery = {
+            text: query,
+            values: [companyId, companyId, companyId],
+        }
 
-            const data = await pool.query(preparedQuery);
-            return data.rows;
+        const data = await pool.query(preparedQuery)
+        return data.rows
     } catch (error) {
         throw Error(error.message)
     }
 }
 
-const getChangeQuantityByCompany = async (pool,companyId,month,year,toDate) => {
+const getChangeQuantityByCompany = async (
+    pool,
+    companyId,
+    month,
+    year,
+    toDate
+) => {
     try {
         const query = `
             SELECT 
@@ -221,22 +227,29 @@ const getChangeQuantityByCompany = async (pool,companyId,month,year,toDate) => {
         const preparedQuery = {
             text: query,
             values: [
-                companyId,month,year,
-                companyId,month,year,
-                companyId,toDate,
-                companyId,toDate,
-                companyId,toDate,
-            ]
-        };
+                companyId,
+                month,
+                year,
+                companyId,
+                month,
+                year,
+                companyId,
+                toDate,
+                companyId,
+                toDate,
+                companyId,
+                toDate,
+            ],
+        }
 
-        const {rows:result} = await pool.query(preparedQuery);
-        return (result)
+        const { rows: result } = await pool.query(preparedQuery)
+        return result
     } catch (error) {
         throw Error(error.message)
     }
 }
 
-const getTotalEmployeeByCompany = async (pool,companyId,toDate) => {
+const getTotalEmployeeByCompany = async (pool, companyId, toDate) => {
     try {
         const query = `
             SELECT 
@@ -264,15 +277,18 @@ const getTotalEmployeeByCompany = async (pool,companyId,toDate) => {
 
         const preparedQuery = {
             text: query,
-            values: [companyId,toDate,companyId]
-        };
+            values: [companyId, toDate, companyId],
+        }
 
-        const {rows:result} = await pool.query(preparedQuery);
-        return (result)
+        const { rows: result } = await pool.query(preparedQuery)
+        return result
     } catch (error) {
         throw Error(error.message)
     }
 }
 
-
-module.exports = {getEmployeeChangeByCompany,getChangeQuantityByCompany,getTotalEmployeeByCompany}
+module.exports = {
+    getEmployeeChangeByCompany,
+    getChangeQuantityByCompany,
+    getTotalEmployeeByCompany,
+}
