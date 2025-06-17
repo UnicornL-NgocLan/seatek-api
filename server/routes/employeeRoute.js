@@ -43,5 +43,11 @@ router.patch(
     odooAuthorize,
     employeeCtrl.updateContactBasedOnEmployeeStatus
 )
+router.post(
+    '/create-employee-inter-database',
+    limiter,
+    authenticateEmployeeKey,
+    odooAuthorize
+)
 
 module.exports = router

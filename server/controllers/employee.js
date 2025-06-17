@@ -288,6 +288,14 @@ const employeeCtrl = {
             res.status(500).json({ msg: error.message })
         }
     },
+
+    processCaseEmployeeInterDatabase: async (req, res) => {
+        try {
+            const { current_employee_id, employeeDat, isRetailDB } = req.body
+        } catch (error) {
+            res.status(500).json({ msg: error.message })
+        }
+    },
 }
 
 module.exports = employeeCtrl
