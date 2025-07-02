@@ -291,8 +291,184 @@ const getTotalEmployeeByCompany = async (pool, companyId, toDate) => {
     }
 }
 
+async function getEmployeeData(odoo, employeeId, isCheckCounterpart) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        let parametersForComparison = isCheckCounterpart
+            ? [
+                  [
+                      's_identification_id',
+                      '=',
+                      isCheckCounterpart?.s_identification_id,
+                  ],
+                  ['company_id', '=', isCheckCounterpart?.company_id[0]],
+              ]
+            : [['id', '=', employeeId]]
+        inParams.push(parametersForComparison)
+        inParams.push([
+            'id',
+            's_identification_id',
+            'company_id',
+            'sea_company_ids',
+            'name',
+            'country_id',
+            'ethnicity',
+            'religin',
+            'birthday',
+            'place_of_birth',
+            'country_of_birth',
+            'bank_id',
+            'acc_number',
+            'acc_holder_name',
+            'sea_person_email',
+            'main_phone_number',
+            'sea_permanent_addr',
+            'permanent_country_id',
+            'permanent_city_id',
+            'permanent_district_id',
+            'sea_temp_addr',
+            'temporary_country_id',
+            'temporary_city_id',
+            'temporary_district_id',
+            'identification_id',
+            'sea_id_issue_date',
+            'id_issue_place',
+            'id_expiry_date',
+            'passport_id',
+            'gender',
+            'marital',
+            'spouse_complete_name',
+            'spouse_birthday',
+            'study_field',
+            'seagroup_join_date',
+        ])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw('hr.employee', 'search_read', params, (err, data) => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(data)
+            }
+        })
+    })
+}
+
+async function getHrEmployeeMultiCompany(odoo, employeeId) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([['name', '=', employeeId]])
+        inParams.push([
+            'id',
+            'name',
+            'primary_company',
+            'company_id',
+            'joining_date',
+            'resignation_date',
+            'employee_current_status',
+            's_identification_id',
+        ])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.employee.multi.company',
+            'search_read',
+            params,
+            function (err, user) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(user)
+                }
+            }
+        )
+    })
+}
+
+async function updateHrEmployeeMultiCompany(odoo, employeeId, data) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([employeeId])
+        inParams.push(data)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.employee.multi.company',
+            'write',
+            params,
+            function (err, user) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(user)
+                }
+            }
+        )
+    })
+}
+
+async function addCompaniesToEmployee(odoo, employeeId, companyList) {
+    return new Promise((resolve, reject) => {
+        const inParams = [employeeId, companyList]
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.employee',
+            'create_company_employee',
+            params,
+            function (err, user) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(user)
+                }
+            }
+        )
+    })
+}
+
+async function createHrEmployee(odoo, employeeData) {
+    return new Promise((resolve, reject) => {
+        const inParams = [employeeData]
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw('hr.employee', 'create', params, function (err, user) {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(user)
+            }
+        })
+    })
+}
+
+async function hangeChangeUserCompany(odoo, companyId, uid) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([uid])
+        inParams.push({ company_id: parseInt(companyId) })
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw('res.users', 'write', params, function (err, user) {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(user)
+            }
+        })
+    })
+}
+
 module.exports = {
     getEmployeeChangeByCompany,
     getChangeQuantityByCompany,
     getTotalEmployeeByCompany,
+    getEmployeeData,
+    addCompaniesToEmployee,
+    createHrEmployee,
+    hangeChangeUserCompany,
+    getHrEmployeeMultiCompany,
+    updateHrEmployeeMultiCompany,
 }

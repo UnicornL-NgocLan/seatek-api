@@ -5,10 +5,12 @@ const {
     getEmployeeChangeByCompany,
     getChangeQuantityByCompany,
     getTotalEmployeeByCompany,
-    getNumberOfEmployees,
-    getEmployeeCustomerPartner,
-    changeEmployeeStatus,
-    createNewRespartner,
+    getEmployeeData,
+    addCompaniesToEmployee,
+    createHrEmployee,
+    hangeChangeUserCompany,
+    getHrEmployeeMultiCompany,
+    updateHrEmployeeMultiCompany,
 } = require('../utils/getEmployeeChangeByCompany')
 const checkIfEmployeeWorkingOrNot = require('../utils/checkIfEmployeeInorOut')
 
@@ -237,49 +239,49 @@ const employeeCtrl = {
             const odoo = req.odoo
             const odoo_retail = req.odoo_retail
 
-            const [employeeDataRetail, employeeDataRemaining] =
-                await Promise.all([
-                    getNumberOfEmployees(odoo_retail, true),
-                    getNumberOfEmployees(odoo, false),
-                ])
+            // const [employeeDataRetail, employeeDataRemaining] =
+            //     await Promise.all([
+            //         getNumberOfEmployees(odoo_retail, true),
+            //         getNumberOfEmployees(odoo, false),
+            //     ])
 
-            const companyList = [9]
-            const priceListOfCompanies = [{ company_id: 9, priceList: 509 }]
+            // const companyList = [9]
+            // const priceListOfCompanies = [{ company_id: 9, priceList: 509 }]
 
-            for (const companyId of companyList) {
-                const partnerList = await getEmployeeCustomerPartner(
-                    odoo,
-                    companyId
-                )
-                const [toDeActivate, toActivate, toAddNew] =
-                    checkIfEmployeeWorkingOrNot(
-                        [...employeeDataRetail, ...employeeDataRemaining],
-                        partnerList
-                    )
-                const listToDeActivate = toDeActivate.map((i) => {
-                    return changeEmployeeStatus(odoo, false, i.id)
-                })
+            // for (const companyId of companyList) {
+            //     const partnerList = await getEmployeeCustomerPartner(
+            //         odoo,
+            //         companyId
+            //     )
+            //     const [toDeActivate, toActivate, toAddNew] =
+            //         checkIfEmployeeWorkingOrNot(
+            //             [...employeeDataRetail, ...employeeDataRemaining],
+            //             partnerList
+            //         )
+            //     const listToDeActivate = toDeActivate.map((i) => {
+            //         return changeEmployeeStatus(odoo, false, i.id)
+            //     })
 
-                const listToActivate = toActivate.map((i) => {
-                    return changeEmployeeStatus(odoo, true, i.id)
-                })
+            //     const listToActivate = toActivate.map((i) => {
+            //         return changeEmployeeStatus(odoo, true, i.id)
+            //     })
 
-                // const listToCreateNewParner = toAddNew.map((i) =>
-                //     createNewRespartner(odoo, {
-                //         name: i.name[1],
-                //         sea_business_code: `SeaGroup_${i.id}_${i.s_identification_id}`,
-                //         ref: i.s_identification_id,
-                //         customer: true,
-                //         mark_as_todo: true,
-                //         pricelist_id: priceListOfCompanies.find(
-                //             (item) => item.company_id === companyId
-                //         )?.priceList,
-                //         custom_type_id: 3,
-                //     })
-                // )
+            //     // const listToCreateNewParner = toAddNew.map((i) =>
+            //     //     createNewRespartner(odoo, {
+            //     //         name: i.name[1],
+            //     //         sea_business_code: `SeaGroup_${i.id}_${i.s_identification_id}`,
+            //     //         ref: i.s_identification_id,
+            //     //         customer: true,
+            //     //         mark_as_todo: true,
+            //     //         pricelist_id: priceListOfCompanies.find(
+            //     //             (item) => item.company_id === companyId
+            //     //         )?.priceList,
+            //     //         custom_type_id: 3,
+            //     //     })
+            //     // )
 
-                await Promise.all([...listToDeActivate, ...listToActivate])
-            }
+            //     await Promise.all([...listToDeActivate, ...listToActivate])
+            // }
 
             res.status(200).json({
                 msg: 'Đã cập nhật thành công',
@@ -291,7 +293,172 @@ const employeeCtrl = {
 
     processCaseEmployeeInterDatabase: async (req, res) => {
         try {
-            const { current_employee_id, employeeDat, isRetailDB } = req.body
+            const { current_employee_id, isRetailCurrentDB, listCompanyAdded } =
+                req.body
+
+            if (!current_employee_id)
+                return res
+                    .status(400)
+                    .json({ error: true, msg: 'Hãy cung cấp id của nhân viên' })
+            if (isRetailCurrentDB === undefined)
+                return res.status(400).json({
+                    error: true,
+                    msg: 'Hãy xác định database hiện tại có phải Retail',
+                })
+            if (listCompanyAdded === undefined)
+                return res.status(400).json({
+                    error: true,
+                    msg: 'Vui lòng cung cấp danh sách công ty được thêm vào',
+                })
+            const odoo = req.odoo
+            const odoo_retail = req.odoo_retail
+
+            // Mục đích kiểm tra xem nhân viên đó đã được tạo trước khi tách database chưa?
+            let isUserAlreadyExisted = false
+
+            let domainTogetCounterpartEmployee = isRetailCurrentDB
+                ? odoo
+                : odoo_retail
+
+            let domainTogetCurrentEmployee = isRetailCurrentDB
+                ? odoo_retail
+                : odoo
+
+            const currentEmployee = await getEmployeeData(
+                domainTogetCurrentEmployee,
+                current_employee_id,
+                null
+            )
+
+            if (currentEmployee.length === 0)
+                return res.status(400).json({
+                    error: true,
+                    msg: 'Nhân viên không tìm thấy ở database hiện tại!',
+                })
+            // Kiểm tra xem user đã có ở database còn lại ?
+            const result = await getEmployeeData(
+                domainTogetCounterpartEmployee,
+                current_employee_id,
+                currentEmployee[0]
+            )
+
+            isUserAlreadyExisted = result.length === 0 ? false : true
+            if (isUserAlreadyExisted) {
+                // Nếu nhân viên đã có ở database còn lại thì sẽ cập nhật lại thông tin
+                let myNewCompanyList = [
+                    ...result[0].sea_company_ids,
+                    ...listCompanyAdded,
+                ]
+                await addCompaniesToEmployee(
+                    domainTogetCounterpartEmployee,
+                    result[0].id,
+                    myNewCompanyList
+                )
+            } else {
+                // Nếu nhân viên chưa có ở database còn lại thì sẽ tạo mới
+                const myEmployeeData = {
+                    name: currentEmployee[0].name,
+                    company_id: currentEmployee[0].company_id[0],
+                    s_identification_id: currentEmployee[0].s_identification_id,
+                    country_id: currentEmployee[0].country_id[0],
+                    birthday: currentEmployee[0].birthday,
+                    place_of_birth: currentEmployee[0].place_of_birth,
+                    country_of_birth: currentEmployee[0].country_of_birth[0],
+                    main_phone_number: currentEmployee[0].main_phone_number,
+                    sea_permanent_addr: currentEmployee[0].sea_permanent_addr,
+                    permanent_country_id:
+                        currentEmployee[0].permanent_country_id[0],
+                    permanent_city_id: currentEmployee[0].permanent_city_id[0],
+                    permanent_district_id:
+                        currentEmployee[0].permanent_district_id[0],
+                    sea_temp_addr: currentEmployee[0].sea_temp_addr,
+                    temporary_country_id:
+                        currentEmployee[0].temporary_country_id[0],
+                    temporary_city_id: currentEmployee[0].temporary_city_id[0],
+                    temporary_district_id:
+                        currentEmployee[0].temporary_district_id[0],
+                    identification_id: currentEmployee[0].identification_id,
+                    sea_id_issue_date: currentEmployee[0].sea_id_issue_date,
+                    id_issue_place: currentEmployee[0].id_issue_place[0],
+                    id_expiry_date: currentEmployee[0].id_expiry_date,
+                    passport_id: currentEmployee[0].passport_id,
+                    gender: currentEmployee[0].gender,
+                    marital: currentEmployee[0].marital,
+                    study_field: currentEmployee[0].study_field,
+                    seagroup_join_date: currentEmployee[0].seagroup_join_date,
+                }
+
+                const hr_tool_id = isRetailCurrentDB ? 1810 : 1798
+                await hangeChangeUserCompany(
+                    domainTogetCounterpartEmployee,
+                    currentEmployee[0].company_id[0],
+                    hr_tool_id
+                )
+
+                // Tạo mới nhân viên ở database còn lại
+                const newEmployeeId = await createHrEmployee(
+                    domainTogetCounterpartEmployee,
+                    myEmployeeData
+                )
+
+                // Thêm công ty vào nhân viên
+
+                const currentWorkingCompany =
+                    currentEmployee[0].sea_company_ids.filter(
+                        (i) => i !== currentEmployee[0].company_id[0]
+                    )
+
+                await addCompaniesToEmployee(
+                    domainTogetCounterpartEmployee,
+                    newEmployeeId,
+                    currentWorkingCompany
+                )
+
+                const employeeMultiList = await getHrEmployeeMultiCompany(
+                    domainTogetCurrentEmployee,
+                    current_employee_id
+                )
+
+                const counterEmployeeMultiList =
+                    await getHrEmployeeMultiCompany(
+                        domainTogetCounterpartEmployee,
+                        newEmployeeId
+                    )
+
+                // Cập nhật lại thông tin của nhân viên đa công ty
+                for (const employeeMulti of counterEmployeeMultiList) {
+                    const currentEmployeeMulti = employeeMultiList.find(
+                        (i) =>
+                            i.s_identification_id ===
+                                employeeMulti.s_identification_id &&
+                            i.company_id[0] === employeeMulti.company_id[0]
+                    )
+
+                    await hangeChangeUserCompany(
+                        domainTogetCounterpartEmployee,
+                        1,
+                        hr_tool_id
+                    )
+
+                    await updateHrEmployeeMultiCompany(
+                        domainTogetCounterpartEmployee,
+                        employeeMulti.id,
+                        {
+                            primary_company:
+                                currentEmployeeMulti.primary_company,
+                            joining_date: currentEmployeeMulti.joining_date,
+                            resignation_date:
+                                currentEmployeeMulti.resignation_date,
+                            employee_current_status:
+                                currentEmployeeMulti.employee_current_status,
+                        }
+                    )
+                }
+            }
+            res.status(200).json({
+                sucess: true,
+                msg: 'Đã xử lý thành công!',
+            })
         } catch (error) {
             res.status(500).json({ msg: error.message })
         }

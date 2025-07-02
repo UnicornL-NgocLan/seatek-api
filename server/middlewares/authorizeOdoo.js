@@ -23,7 +23,6 @@ const odooAuthorize = async (req, res, next) => {
                     return resolve(odooInstance)
                 })
             })
-
         const [odoo1, odooRetail] = await Promise.all([
             connectToOdoo(odoo),
             connectToOdoo(odoo_retail),
