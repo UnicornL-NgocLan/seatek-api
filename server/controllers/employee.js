@@ -293,172 +293,182 @@ const employeeCtrl = {
 
     processCaseEmployeeInterDatabase: async (req, res) => {
         try {
-            const { current_employee_id, isRetailCurrentDB, listCompanyAdded } =
-                req.body
-
+            const { current_employee_id, isRetailCurrentDB } = req.body
             if (!current_employee_id)
                 return res
                     .status(400)
                     .json({ error: true, msg: 'Hãy cung cấp id của nhân viên' })
-            if (isRetailCurrentDB === undefined)
+            if (typeof isRetailCurrentDB !== 'boolean')
                 return res.status(400).json({
                     error: true,
                     msg: 'Hãy xác định database hiện tại có phải Retail',
                 })
-            if (listCompanyAdded === undefined)
-                return res.status(400).json({
-                    error: true,
-                    msg: 'Vui lòng cung cấp danh sách công ty được thêm vào',
-                })
+
             const odoo = req.odoo
             const odoo_retail = req.odoo_retail
+            const [currentDomain, counterpartDomain] = isRetailCurrentDB
+                ? [odoo_retail, odoo]
+                : [odoo, odoo_retail]
+            const hr_tool_id = isRetailCurrentDB ? 1810 : 1798
 
-            // Mục đích kiểm tra xem nhân viên đó đã được tạo trước khi tách database chưa?
-            let isUserAlreadyExisted = false
-
-            let domainTogetCounterpartEmployee = isRetailCurrentDB
-                ? odoo
-                : odoo_retail
-
-            let domainTogetCurrentEmployee = isRetailCurrentDB
-                ? odoo_retail
-                : odoo
-
+            // Get current employee data
             const currentEmployee = await getEmployeeData(
-                domainTogetCurrentEmployee,
+                currentDomain,
                 current_employee_id,
                 null
             )
-
-            if (currentEmployee.length === 0)
+            if (!currentEmployee.length)
                 return res.status(400).json({
                     error: true,
                     msg: 'Nhân viên không tìm thấy ở database hiện tại!',
                 })
-            // Kiểm tra xem user đã có ở database còn lại ?
-            const result = await getEmployeeData(
-                domainTogetCounterpartEmployee,
+            const emp = currentEmployee[0]
+
+            // Check if user already exists in the counterpart DB
+            const counterpartResult = await getEmployeeData(
+                counterpartDomain,
                 current_employee_id,
-                currentEmployee[0]
+                emp
             )
 
-            isUserAlreadyExisted = result.length === 0 ? false : true
-            if (isUserAlreadyExisted) {
-                // Nếu nhân viên đã có ở database còn lại thì sẽ cập nhật lại thông tin
-                let myNewCompanyList = [
-                    ...result[0].sea_company_ids,
-                    ...listCompanyAdded,
-                ]
-                await addCompaniesToEmployee(
-                    domainTogetCounterpartEmployee,
-                    result[0].id,
-                    myNewCompanyList
-                )
-            } else {
-                // Nếu nhân viên chưa có ở database còn lại thì sẽ tạo mới
-                const myEmployeeData = {
-                    name: currentEmployee[0].name,
-                    company_id: currentEmployee[0].company_id[0],
-                    s_identification_id: currentEmployee[0].s_identification_id,
-                    country_id: currentEmployee[0].country_id[0],
-                    birthday: currentEmployee[0].birthday,
-                    place_of_birth: currentEmployee[0].place_of_birth,
-                    country_of_birth: currentEmployee[0].country_of_birth[0],
-                    main_phone_number: currentEmployee[0].main_phone_number,
-                    sea_permanent_addr: currentEmployee[0].sea_permanent_addr,
-                    permanent_country_id:
-                        currentEmployee[0].permanent_country_id[0],
-                    permanent_city_id: currentEmployee[0].permanent_city_id[0],
-                    permanent_district_id:
-                        currentEmployee[0].permanent_district_id[0],
-                    sea_temp_addr: currentEmployee[0].sea_temp_addr,
-                    temporary_country_id:
-                        currentEmployee[0].temporary_country_id[0],
-                    temporary_city_id: currentEmployee[0].temporary_city_id[0],
-                    temporary_district_id:
-                        currentEmployee[0].temporary_district_id[0],
-                    identification_id: currentEmployee[0].identification_id,
-                    sea_id_issue_date: currentEmployee[0].sea_id_issue_date,
-                    id_issue_place: currentEmployee[0].id_issue_place[0],
-                    id_expiry_date: currentEmployee[0].id_expiry_date,
-                    passport_id: currentEmployee[0].passport_id,
-                    gender: currentEmployee[0].gender,
-                    marital: currentEmployee[0].marital,
-                    study_field: currentEmployee[0].study_field,
-                    seagroup_join_date: currentEmployee[0].seagroup_join_date,
-                }
-
-                const hr_tool_id = isRetailCurrentDB ? 1810 : 1798
-                await hangeChangeUserCompany(
-                    domainTogetCounterpartEmployee,
-                    currentEmployee[0].company_id[0],
-                    hr_tool_id
-                )
-
-                // Tạo mới nhân viên ở database còn lại
-                const newEmployeeId = await createHrEmployee(
-                    domainTogetCounterpartEmployee,
-                    myEmployeeData
-                )
-
-                // Thêm công ty vào nhân viên
-
-                const currentWorkingCompany =
-                    currentEmployee[0].sea_company_ids.filter(
-                        (i) => i !== currentEmployee[0].company_id[0]
-                    )
-
-                await addCompaniesToEmployee(
-                    domainTogetCounterpartEmployee,
-                    newEmployeeId,
-                    currentWorkingCompany
-                )
-
-                const employeeMultiList = await getHrEmployeeMultiCompany(
-                    domainTogetCurrentEmployee,
-                    current_employee_id
-                )
-
-                const counterEmployeeMultiList =
-                    await getHrEmployeeMultiCompany(
-                        domainTogetCounterpartEmployee,
-                        newEmployeeId
-                    )
-
-                // Cập nhật lại thông tin của nhân viên đa công ty
-                for (const employeeMulti of counterEmployeeMultiList) {
-                    const currentEmployeeMulti = employeeMultiList.find(
+            // Helper to sync multi-company info
+            const syncMultiCompany = async (
+                sourceDomain,
+                targetDomain,
+                sourceId,
+                targetId
+            ) => {
+                const [sourceList, targetList] = await Promise.all([
+                    getHrEmployeeMultiCompany(sourceDomain, sourceId),
+                    getHrEmployeeMultiCompany(targetDomain, targetId),
+                ])
+                for (const targetMulti of targetList) {
+                    const match = sourceList.find(
                         (i) =>
                             i.s_identification_id ===
-                                employeeMulti.s_identification_id &&
-                            i.company_id[0] === employeeMulti.company_id[0]
+                                targetMulti.s_identification_id &&
+                            i.company_id[0] === targetMulti.company_id[0]
                     )
-
-                    await hangeChangeUserCompany(
-                        domainTogetCounterpartEmployee,
-                        1,
-                        hr_tool_id
-                    )
-
-                    await updateHrEmployeeMultiCompany(
-                        domainTogetCounterpartEmployee,
-                        employeeMulti.id,
-                        {
-                            primary_company:
-                                currentEmployeeMulti.primary_company,
-                            joining_date: currentEmployeeMulti.joining_date,
-                            resignation_date:
-                                currentEmployeeMulti.resignation_date,
-                            employee_current_status:
-                                currentEmployeeMulti.employee_current_status,
-                        }
-                    )
+                    if (match) {
+                        await hangeChangeUserCompany(
+                            targetDomain,
+                            1,
+                            hr_tool_id
+                        )
+                        await updateHrEmployeeMultiCompany(
+                            targetDomain,
+                            targetMulti.id,
+                            {
+                                primary_company: match.primary_company,
+                                joining_date: match.joining_date,
+                                resignation_date: match.resignation_date,
+                                employee_current_status:
+                                    match.employee_current_status,
+                            }
+                        )
+                    }
                 }
             }
-            res.status(200).json({
-                sucess: true,
-                msg: 'Đã xử lý thành công!',
-            })
+
+            if (counterpartResult.length > 0) {
+                // Update companies for existing employee in counterpart DB
+                await addCompaniesToEmployee(
+                    counterpartDomain,
+                    counterpartResult[0].id,
+                    [...emp.sea_company_ids]
+                )
+                await syncMultiCompany(
+                    currentDomain,
+                    counterpartDomain,
+                    current_employee_id,
+                    counterpartResult[0].id
+                )
+            } else {
+                // Prepare employee data for creation
+                const {
+                    name,
+                    company_id,
+                    s_identification_id,
+                    country_id,
+                    birthday,
+                    place_of_birth,
+                    country_of_birth,
+                    main_phone_number,
+                    sea_permanent_addr,
+                    permanent_country_id,
+                    permanent_city_id,
+                    permanent_district_id,
+                    sea_temp_addr,
+                    temporary_country_id,
+                    temporary_city_id,
+                    temporary_district_id,
+                    identification_id,
+                    sea_id_issue_date,
+                    id_issue_place,
+                    id_expiry_date,
+                    passport_id,
+                    gender,
+                    marital,
+                    study_field,
+                    seagroup_join_date,
+                    sea_company_ids,
+                } = emp
+                const myEmployeeData = {
+                    name,
+                    company_id: company_id[0],
+                    s_identification_id,
+                    country_id: country_id[0],
+                    birthday,
+                    place_of_birth,
+                    country_of_birth: country_of_birth[0],
+                    main_phone_number,
+                    sea_permanent_addr,
+                    permanent_country_id: permanent_country_id[0],
+                    permanent_city_id: permanent_city_id[0],
+                    permanent_district_id: permanent_district_id[0],
+                    sea_temp_addr,
+                    temporary_country_id: temporary_country_id[0],
+                    temporary_city_id: temporary_city_id[0],
+                    temporary_district_id: temporary_district_id[0],
+                    identification_id,
+                    sea_id_issue_date,
+                    id_issue_place: id_issue_place[0],
+                    id_expiry_date,
+                    passport_id,
+                    gender,
+                    marital,
+                    study_field,
+                    seagroup_join_date,
+                }
+
+                await hangeChangeUserCompany(
+                    counterpartDomain,
+                    company_id[0],
+                    hr_tool_id
+                )
+                const newEmployeeId = await createHrEmployee(
+                    counterpartDomain,
+                    myEmployeeData
+                )
+                // Add companies to new employee (excluding main company)
+                const currentWorkingCompany = sea_company_ids.filter(
+                    (i) => i !== company_id[0]
+                )
+                if (currentWorkingCompany.length > 0) {
+                    await addCompaniesToEmployee(
+                        counterpartDomain,
+                        newEmployeeId,
+                        currentWorkingCompany
+                    )
+                }
+                await syncMultiCompany(
+                    currentDomain,
+                    counterpartDomain,
+                    current_employee_id,
+                    newEmployeeId
+                )
+            }
+            res.status(200).json({ success: true, msg: 'Đã xử lý thành công!' })
         } catch (error) {
             res.status(500).json({ msg: error.message })
         }
