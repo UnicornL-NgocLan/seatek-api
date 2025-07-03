@@ -297,7 +297,7 @@ const employeeCtrl = {
             if (!current_employee_id)
                 return res
                     .status(400)
-                    .json({ error: true, msg: 'Hãy cung cấp id của nhân viên' })
+                    .json({ error: true, msg: 'Hãy cung cấp ID của nhân viên' })
             if (typeof isRetailCurrentDB !== 'boolean')
                 return res.status(400).json({
                     error: true,
