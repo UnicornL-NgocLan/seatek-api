@@ -295,14 +295,14 @@ const employeeCtrl = {
         try {
             const { current_employee_id, isRetailCurrentDB, currentDBName } =
                 req.body
-            // if (
-            //     !currentDBName ||
-            //     !['opensea12pro', 'opensea12retail'].includes(currentDBName)
-            // )
-            //     return res.status(403).json({
-            //         error: true,
-            //         msg: 'Đảm bảo cung cấp đúng tên database hợp lệ',
-            //     })
+            if (
+                !currentDBName ||
+                !['opensea12pro', 'opensea12retail'].includes(currentDBName)
+            )
+                return res.status(403).json({
+                    error: true,
+                    msg: 'Đảm bảo cung cấp đúng tên database hợp lệ',
+                })
             if (!current_employee_id)
                 return res.status(400).json({
                     error: true,
@@ -319,7 +319,7 @@ const employeeCtrl = {
             const [currentDomain, counterpartDomain] = isRetailCurrentDB
                 ? [odoo_retail, odoo]
                 : [odoo, odoo_retail]
-            const hr_tool_id = isRetailCurrentDB ? 1810 : 1798
+            const hr_tool_id = isRetailCurrentDB ? 1864 : 1861
 
             // Get current employee data
             const currentEmployee = await getEmployeeData(
@@ -460,6 +460,8 @@ const employeeCtrl = {
                     counterpartDomain,
                     myEmployeeData
                 )
+
+                await hangeChangeUserCompany(counterpartDomain, 1, hr_tool_id)
                 // Add companies to new employee (excluding main company)
                 const currentWorkingCompany = sea_company_ids.filter(
                     (i) => i !== company_id[0]
