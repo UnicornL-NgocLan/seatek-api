@@ -293,11 +293,21 @@ const employeeCtrl = {
 
     processCaseEmployeeInterDatabase: async (req, res) => {
         try {
-            const { current_employee_id, isRetailCurrentDB } = req.body
+            const { current_employee_id, isRetailCurrentDB, currentDBName } =
+                req.body
+            // if (
+            //     !currentDBName ||
+            //     !['opensea12pro', 'opensea12retail'].includes(currentDBName)
+            // )
+            //     return res.status(403).json({
+            //         error: true,
+            //         msg: 'Đảm bảo cung cấp đúng tên database hợp lệ',
+            //     })
             if (!current_employee_id)
-                return res
-                    .status(400)
-                    .json({ error: true, msg: 'Hãy cung cấp ID của nhân viên' })
+                return res.status(400).json({
+                    error: true,
+                    msg: 'Hãy cung cấp ID của nhân viên',
+                })
             if (typeof isRetailCurrentDB !== 'boolean')
                 return res.status(400).json({
                     error: true,
@@ -470,7 +480,7 @@ const employeeCtrl = {
             }
             res.status(200).json({ success: true, msg: 'Đã xử lý thành công!' })
         } catch (error) {
-            res.status(500).json({ msg: error.message })
+            res.status(500).json({ error: true, msg: error.message })
         }
     },
 }
