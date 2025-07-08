@@ -319,7 +319,7 @@ const employeeCtrl = {
             const [currentDomain, counterpartDomain] = isRetailCurrentDB
                 ? [odoo_retail, odoo]
                 : [odoo, odoo_retail]
-            const hr_tool_id = isRetailCurrentDB ? 1864 : 1861
+            const hr_tool_id = isRetailCurrentDB ? 1861 : 1864
 
             // Get current employee data
             const currentEmployee = await getEmployeeData(
