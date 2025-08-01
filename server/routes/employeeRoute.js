@@ -43,6 +43,13 @@ router.patch(
     odooAuthorize,
     employeeCtrl.updateContactBasedOnEmployeeStatus
 )
+router.patch(
+    '/update-employee-partner-list-retail',
+    limiter,
+    authenticateEmployeeKey,
+    odooAuthorize,
+    employeeCtrl.updateContactBasedOnEmployeeStatusRetail
+)
 router.post(
     '/process-employee-inter-database',
     limiter,

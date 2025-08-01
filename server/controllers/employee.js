@@ -16,8 +16,12 @@ const {
     updateCustomerGroupOfPartner,
     createNewRespartner,
     getHrEmployee,
+    getAllHrEmployeeCreatedToday,
 } = require('../utils/getEmployeeChangeByCompany')
-const checkIfEmployeeWorkingOrNot = require('../utils/checkIfEmployeeInorOut')
+const {
+    checkIfEmployeeWorkingOrNot,
+    checkIfEmployeeWorkingOrNotRetailVersion,
+} = require('../utils/checkIfEmployeeInorOut')
 
 // Database connection configuration
 const dbConfig = {
@@ -272,13 +276,13 @@ const employeeCtrl = {
                         partnerList,
                         group.familyGroup
                     )
-                const listToDeActivate = toDeActivate.map((i) => {
-                    return updateCustomerGroupOfPartner(
-                        odoo,
-                        i.id,
-                        group.exEmployeeGroup
-                    )
-                })
+                // const listToDeActivate = toDeActivate.map((i) => {
+                //     return updateCustomerGroupOfPartner(
+                //         odoo,
+                //         i.id,
+                //         group.exEmployeeGroup
+                //     )
+                // })
                 const listToActivate = toActivate.map((i) => {
                     return updateCustomerGroupOfPartner(
                         odoo,
@@ -308,7 +312,102 @@ const employeeCtrl = {
                 })
 
                 await Promise.all([
-                    ...listToDeActivate,
+                    ...listToActivate,
+                    ...listToCreateNewPartner,
+                ])
+            }
+
+            res.status(200).json({
+                msg: 'Đã cập nhật thành công',
+            })
+        } catch (error) {
+            res.status(500).json({ msg: error.message })
+        }
+    },
+
+    updateContactBasedOnEmployeeStatusRetail: async (req, res) => {
+        try {
+            const odoo = req.odoo_pos_tool
+            const odooRetail = req.odoo_retail_pos_tool
+            const rawEmployeeData = await getNumberOfEmployees(odoo)
+            const companyIds = [30]
+            const mappingCompanyCustomerGroup = [
+                { company_id: 30, familyGroup: 1, exEmployeeGroup: 2 },
+            ]
+            const removedDuplicates = []
+            for (let i = 0; i < rawEmployeeData.length; i++) {
+                const item = rawEmployeeData[i]
+                if (
+                    !removedDuplicates.some((i) => i.name[0] === item.name[0])
+                ) {
+                    removedDuplicates.push(item)
+                }
+            }
+
+            const date = new Date()
+            date.setHours(0, 0, 0, 0) //Lấy thời gian đầu ngày hôm nay
+
+            const hrEmployeeCreated = await getAllHrEmployeeCreatedToday(
+                odoo,
+                date
+            )
+
+            const lisOfEmployeeCreatedToday = removedDuplicates.filter((i) =>
+                hrEmployeeCreated.find((item) => item.id === i.name[0])
+            )
+
+            for (const companyId of companyIds) {
+                const group = mappingCompanyCustomerGroup.find(
+                    (item) => item.company_id === companyId
+                )
+
+                const partnerList = await getEmployeeCustomerPartner(
+                    odooRetail,
+                    companyId
+                )
+                const [toDeActivate, toActivate, toAddNew] =
+                    checkIfEmployeeWorkingOrNotRetailVersion(
+                        removedDuplicates,
+                        partnerList,
+                        group.familyGroup,
+                        lisOfEmployeeCreatedToday
+                    )
+                // const listToDeActivate = toDeActivate.map((i) => {
+                //     return updateCustomerGroupOfPartner(
+                //         odooRetail,
+                //         i.id,
+                //         group.exEmployeeGroup
+                //     )
+                // })
+                const listToActivate = toActivate.map((i) => {
+                    return updateCustomerGroupOfPartner(
+                        odooRetail,
+                        i.id,
+                        group.familyGroup
+                    )
+                })
+
+                const listToCreateNewPartner = toAddNew.map(async (i) => {
+                    const respectiveHrEmployee = await getHrEmployee(
+                        odoo,
+                        i.name[0]
+                    )
+                    return createNewRespartner(odooRetail, {
+                        name: i.name[1],
+                        ref: i.s_identification_id,
+                        sea_business_code: `SeaGroup_${i.name[0]}_${i.s_identification_id}`,
+                        customer: true,
+                        custom_type_id: 1,
+                        group_ids: group.familyGroup,
+                        sea_sales_department: 'le',
+                        company_id: companyId,
+                        company_ids: companyId,
+                        phone: respectiveHrEmployee[0]?.main_phone_number,
+                        mobile: respectiveHrEmployee[0]?.main_phone_number,
+                    })
+                })
+
+                await Promise.all([
                     ...listToActivate,
                     ...listToCreateNewPartner,
                 ])

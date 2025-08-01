@@ -545,6 +545,29 @@ async function getHrEmployee(odoo, id) {
     })
 }
 
+async function getAllHrEmployeeCreatedToday(odoo, date) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([['create_date', '>', date]])
+        inParams.push(['main_phone_number', 's_identification_id'])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.employee',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
 async function updateCustomerGroupOfPartner(odoo, partnerId, groupId) {
     return new Promise((resolve, reject) => {
         const params = [[{ group_ids: groupId, partner_id: partnerId }]]
@@ -597,4 +620,5 @@ module.exports = {
     updateCustomerGroupOfPartner,
     createNewRespartner,
     getHrEmployee,
+    getAllHrEmployeeCreatedToday,
 }
