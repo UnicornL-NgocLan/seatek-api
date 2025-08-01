@@ -1,4 +1,8 @@
-const checkIfEmployeeWorkingOrNot = (employeeList, partnerList) => {
+const checkIfEmployeeWorkingOrNot = (
+    employeeList,
+    partnerList,
+    familyGroup
+) => {
     let partnersToDeactivate = []
     let partnersToActivate = []
 
@@ -8,12 +12,16 @@ const checkIfEmployeeWorkingOrNot = (employeeList, partnerList) => {
             const isItInEmployeeList = employeeList.find(
                 (item) => item.name[0].toString() === employeeId[1].toString()
             )
+
+            // Kiểm tra xem nhân viên này đã nghỉ việc chưa? (Có partner mà không tìm employee đang làm việc)
             if (!isItInEmployeeList) {
-                if (partnerList[i].active) {
+                // Kiểm tra xem partner đó có thuộc group familiy không? Nếu có thì cần phải chuyển vào group deactive
+                if (partnerList[i].group_ids.includes(familyGroup)) {
                     partnersToDeactivate.push(partnerList[i])
                 }
             } else {
-                if (!partnerList[i].active) {
+                // Nếu như partner đó không thuộc group gia đình seacorp thì cho vào group toActivate để add vào lại
+                if (!partnerList[i].group_ids.includes(familyGroup)) {
                     partnersToActivate.push(partnerList[i])
                 }
             }

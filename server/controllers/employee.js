@@ -11,6 +11,11 @@ const {
     hangeChangeUserCompany,
     getHrEmployeeMultiCompany,
     updateHrEmployeeMultiCompany,
+    getNumberOfEmployees,
+    getEmployeeCustomerPartner,
+    updateCustomerGroupOfPartner,
+    createNewRespartner,
+    getHrEmployee,
 } = require('../utils/getEmployeeChangeByCompany')
 const checkIfEmployeeWorkingOrNot = require('../utils/checkIfEmployeeInorOut')
 
@@ -236,52 +241,78 @@ const employeeCtrl = {
 
     updateContactBasedOnEmployeeStatus: async (req, res) => {
         try {
-            const odoo = req.odoo
-            const odoo_retail = req.odoo_retail
+            const odoo = req.odoo_pos_tool
+            const rawEmployeeData = await getNumberOfEmployees(odoo)
+            const companyIds = [9]
+            const mappingCompanyCustomerGroup = [
+                { company_id: 9, familyGroup: 14, exEmployeeGroup: 0 },
+            ]
+            const removedDuplicates = []
+            for (let i = 0; i < rawEmployeeData.length; i++) {
+                const item = rawEmployeeData[i]
+                if (
+                    !removedDuplicates.some((i) => i.name[0] === item.name[0])
+                ) {
+                    removedDuplicates.push(item)
+                }
+            }
 
-            // const [employeeDataRetail, employeeDataRemaining] =
-            //     await Promise.all([
-            //         getNumberOfEmployees(odoo_retail, true),
-            //         getNumberOfEmployees(odoo, false),
-            //     ])
+            for (const companyId of companyIds) {
+                const group = mappingCompanyCustomerGroup.find(
+                    (item) => item.company_id === companyId
+                )
 
-            // const companyList = [9]
-            // const priceListOfCompanies = [{ company_id: 9, priceList: 509 }]
+                const partnerList = await getEmployeeCustomerPartner(
+                    odoo,
+                    companyId
+                )
+                const [toDeActivate, toActivate, toAddNew] =
+                    checkIfEmployeeWorkingOrNot(
+                        removedDuplicates,
+                        partnerList,
+                        group.familyGroup
+                    )
+                const listToDeActivate = toDeActivate.map((i) => {
+                    return updateCustomerGroupOfPartner(
+                        odoo,
+                        i.id,
+                        group.exEmployeeGroup
+                    )
+                })
+                const listToActivate = toActivate.map((i) => {
+                    return updateCustomerGroupOfPartner(
+                        odoo,
+                        i.id,
+                        group.familyGroup
+                    )
+                })
 
-            // for (const companyId of companyList) {
-            //     const partnerList = await getEmployeeCustomerPartner(
-            //         odoo,
-            //         companyId
-            //     )
-            //     const [toDeActivate, toActivate, toAddNew] =
-            //         checkIfEmployeeWorkingOrNot(
-            //             [...employeeDataRetail, ...employeeDataRemaining],
-            //             partnerList
-            //         )
-            //     const listToDeActivate = toDeActivate.map((i) => {
-            //         return changeEmployeeStatus(odoo, false, i.id)
-            //     })
+                const listToCreateNewPartner = toAddNew.map(async (i) => {
+                    const respectiveHrEmployee = await getHrEmployee(
+                        odoo,
+                        i.name[0]
+                    )
+                    return createNewRespartner(odoo, {
+                        name: i.name[1],
+                        ref: i.s_identification_id,
+                        sea_business_code: `SeaGroup_${i.name[0]}_${i.s_identification_id}`,
+                        customer: true,
+                        custom_type_id: 1,
+                        group_ids: group.familyGroup,
+                        sea_sales_department: 'le',
+                        company_id: companyId,
+                        company_ids: companyId,
+                        phone: respectiveHrEmployee[0]?.main_phone_number,
+                        mobile: respectiveHrEmployee[0]?.main_phone_number,
+                    })
+                })
 
-            //     const listToActivate = toActivate.map((i) => {
-            //         return changeEmployeeStatus(odoo, true, i.id)
-            //     })
-
-            //     // const listToCreateNewParner = toAddNew.map((i) =>
-            //     //     createNewRespartner(odoo, {
-            //     //         name: i.name[1],
-            //     //         sea_business_code: `SeaGroup_${i.id}_${i.s_identification_id}`,
-            //     //         ref: i.s_identification_id,
-            //     //         customer: true,
-            //     //         mark_as_todo: true,
-            //     //         pricelist_id: priceListOfCompanies.find(
-            //     //             (item) => item.company_id === companyId
-            //     //         )?.priceList,
-            //     //         custom_type_id: 3,
-            //     //     })
-            //     // )
-
-            //     await Promise.all([...listToDeActivate, ...listToActivate])
-            // }
+                await Promise.all([
+                    ...listToDeActivate,
+                    ...listToActivate,
+                    ...listToCreateNewPartner,
+                ])
+            }
 
             res.status(200).json({
                 msg: 'Đã cập nhật thành công',

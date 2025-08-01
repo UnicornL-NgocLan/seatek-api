@@ -461,6 +461,127 @@ async function hangeChangeUserCompany(odoo, companyId, uid) {
     })
 }
 
+async function getNumberOfEmployees(odoo) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([
+            ['active', '=', true],
+            ['employee_current_status', '!=', 'resigned'],
+            ['company_id', '!=', 1],
+        ])
+        inParams.push(['id', 'name', 's_identification_id'])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.employee.multi.company',
+            'search_read',
+            params,
+            function (err, count) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(count)
+                }
+            }
+        )
+    })
+}
+
+async function getEmployeeCustomerPartner(odoo, companyId) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([
+            ['company_id', '=', companyId],
+            ['sea_business_code', 'like', 'SeaGroup_'],
+        ])
+        inParams.push([
+            'name',
+            'id',
+            'sea_business_code',
+            'company_id',
+            'ref',
+            'group_ids',
+            'customer',
+        ])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'res.partner',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
+async function getHrEmployee(odoo, id) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([['id', '=', parseInt(id)]])
+        inParams.push(['main_phone_number', 's_identification_id'])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.employee',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
+async function updateCustomerGroupOfPartner(odoo, partnerId, groupId) {
+    return new Promise((resolve, reject) => {
+        const params = [[{ group_ids: groupId, partner_id: partnerId }]]
+        odoo.execute_kw(
+            'res.partner',
+            'update_contact_from_external',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
+async function createNewRespartner(odoo, data) {
+    return new Promise((resolve, reject) => {
+        const params = [[data]] // truyền danh sách các đối số positional vào hàm Odoo
+
+        odoo.execute_kw(
+            'res.partner', // model
+            'create_contact_from_external', // method
+            params, // args (wrapped trong mảng)
+            function (err, result) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(result) // thường là ID của record được tạo
+                }
+            }
+        )
+    })
+}
+
 module.exports = {
     getEmployeeChangeByCompany,
     getChangeQuantityByCompany,
@@ -471,4 +592,9 @@ module.exports = {
     hangeChangeUserCompany,
     getHrEmployeeMultiCompany,
     updateHrEmployeeMultiCompany,
+    getNumberOfEmployees,
+    getEmployeeCustomerPartner,
+    updateCustomerGroupOfPartner,
+    createNewRespartner,
+    getHrEmployee,
 }
