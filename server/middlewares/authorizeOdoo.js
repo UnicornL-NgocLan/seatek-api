@@ -17,8 +17,8 @@ const odooAuthorize = async (req, res, next) => {
         })
 
         const odoo_pos_tool = new Odoo({
-            url: 'https://pilot.seateklab.vn',
-            db: 'opensea12pilot',
+            url: process.env.ODOO_HOST,
+            db: process.env.ODOO_DATABASE,
             username: process.env.ODOO_POS_TOOL_USERNAME,
             password: process.env.ODOO_POS_TOOL_PASSWORD,
         })
