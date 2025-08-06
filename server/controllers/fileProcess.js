@@ -71,9 +71,6 @@ const fileProcessCtrl = {
                 },
             })
 
-            console.log('URL:', myRespectiveUrl)
-            console.log('PDF size:', pdfBuffer.length)
-
             await browser.close()
 
             res.set({
