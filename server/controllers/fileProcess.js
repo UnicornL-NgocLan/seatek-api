@@ -62,7 +62,7 @@ const fileProcessCtrl = {
             const pdfBuffer = await page.pdf({
                 format: 'A4',
                 printBackground: true,
-                landscape: true,
+                landscape: false,
                 margin: {
                     top: '20px',
                     bottom: '20px',
