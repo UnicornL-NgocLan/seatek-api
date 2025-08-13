@@ -57,5 +57,18 @@ router.post(
     odooAuthorize,
     employeeCtrl.processCaseEmployeeInterDatabase
 )
+router.get(
+    '/get-department-access-token',
+    limiter,
+    authenticateEmployeeKey,
+    odooAuthorize,
+    employeeCtrl.createAccessToken
+)
+router.get(
+    '/get-departments-through-access-token',
+    limiter,
+    odooAuthorize,
+    employeeCtrl.getDepartmentListByToken
+)
 
 module.exports = router

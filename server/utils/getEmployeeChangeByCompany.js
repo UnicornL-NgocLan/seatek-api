@@ -568,6 +568,40 @@ async function getAllHrEmployeeCreatedToday(odoo, date) {
     })
 }
 
+async function getDepartments(odoo, company_id) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([
+            ['active', '=', true],
+            ['company_id', '=', company_id],
+        ])
+        inParams.push([
+            'name',
+            'head_department',
+            'primary_department',
+            'parent_id',
+            'sort_name',
+            'approve_manager',
+            'company_id',
+        ])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.department',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
 async function updateCustomerGroupOfPartner(odoo, partnerId, groupId) {
     return new Promise((resolve, reject) => {
         const params = [[{ group_ids: groupId, partner_id: partnerId }]]
@@ -605,6 +639,32 @@ async function createNewRespartner(odoo, data) {
     })
 }
 
+async function getHrEmployeesByCompany(odoo, company_id) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([
+            ['active', '=', true],
+            ['company_id', '=', company_id],
+        ])
+        inParams.push(['name'])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'hr.employee.multi.company',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
 module.exports = {
     getEmployeeChangeByCompany,
     getChangeQuantityByCompany,
@@ -620,5 +680,7 @@ module.exports = {
     updateCustomerGroupOfPartner,
     createNewRespartner,
     getHrEmployee,
+    getDepartments,
     getAllHrEmployeeCreatedToday,
+    getHrEmployeesByCompany,
 }

@@ -1,6 +1,7 @@
 const Pool = require('pg').Pool
 const _ = require('lodash')
 const dateIsValid = require('../utils/dateValidator')
+const jwt = require('jsonwebtoken')
 const {
     getEmployeeChangeByCompany,
     getChangeQuantityByCompany,
@@ -17,6 +18,8 @@ const {
     createNewRespartner,
     getHrEmployee,
     getAllHrEmployeeCreatedToday,
+    getDepartments,
+    getHrEmployeesByCompany,
 } = require('../utils/getEmployeeChangeByCompany')
 const {
     checkIfEmployeeWorkingOrNot,
@@ -613,6 +616,88 @@ const employeeCtrl = {
             res.status(200).json({ success: true, msg: 'Đã xử lý thành công!' })
         } catch (error) {
             res.status(500).json({ error: true, msg: error.message })
+        }
+    },
+
+    createAccessToken: async (req, res) => {
+        try {
+            const { databaseName, company_id } = req.query
+            if (!databaseName)
+                return res
+                    .status(400)
+                    .json({ msg: 'Vui lòng cung cấp tên database' })
+
+            if (
+                !['opensea12pro', 'opensea12pilot', 'opensea12retail'].includes(
+                    databaseName
+                )
+            )
+                return res.status(400).json({ msg: 'Database không hợp lệ' })
+
+            if (!company_id)
+                return res
+                    .status(400)
+                    .json({ msg: 'Vui lòng cung cấp công ty' })
+
+            const token = jwt.sign(
+                { databaseName, company_id },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: '5h',
+                }
+            )
+
+            res.status(200).json({ token })
+        } catch (error) {
+            res.status(500).json({ msg: error.message })
+        }
+    },
+
+    getDepartmentListByToken: async (req, res) => {
+        try {
+            const { token } = req.query
+
+            if (!token)
+                return res
+                    .status(400)
+                    .json({ msg: 'Không tìm thấy mã chứng thực' })
+            const odoo = req.odoo_pos_tool
+            const odooRetail = req.odoo_retail_pos_tool
+
+            const payload = jwt.verify(token, process.env.JWT_SECRET)
+
+            if (!payload)
+                return res.status(403).json({
+                    msg: 'Mã chứng thực không hợp lệ!',
+                })
+
+            const { databaseName, company_id } = payload
+            let listOfDepartments = []
+            let listOfHrEmployeeMultiCompany = []
+
+            const odooInstance =
+                databaseName === 'opensea12pilot'
+                    ? odoo
+                    : databaseName === 'opensea12retail'
+                    ? odooRetail
+                    : ''
+            if (odooInstance) {
+                listOfDepartments = await getDepartments(
+                    odooInstance,
+                    parseInt(company_id)
+                )
+                listOfHrEmployeeMultiCompany = await getHrEmployeesByCompany(
+                    odooInstance,
+                    parseInt(company_id)
+                )
+            }
+
+            res.status(200).json({
+                data: listOfDepartments,
+                listOfHrEmployeeMultiCompany: listOfHrEmployeeMultiCompany,
+            })
+        } catch (error) {
+            res.status(500).json({ msg: error.message })
         }
     },
 }
