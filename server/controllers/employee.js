@@ -643,7 +643,7 @@ const employeeCtrl = {
                 { databaseName, company_id },
                 process.env.JWT_SECRET,
                 {
-                    expiresIn: '5h',
+                    expiresIn: '5m',
                 }
             )
 
