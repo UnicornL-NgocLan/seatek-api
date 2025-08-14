@@ -665,6 +665,52 @@ async function getHrEmployeesByCompany(odoo, company_id) {
     })
 }
 
+async function getDistricts(odoo) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([])
+        inParams.push([])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'res.district',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
+async function getCities(odoo) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([])
+        inParams.push([])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'res.country.state',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
 module.exports = {
     getEmployeeChangeByCompany,
     getChangeQuantityByCompany,
@@ -683,4 +729,6 @@ module.exports = {
     getDepartments,
     getAllHrEmployeeCreatedToday,
     getHrEmployeesByCompany,
+    getDistricts,
+    getCities,
 }

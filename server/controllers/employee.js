@@ -20,11 +20,14 @@ const {
     getAllHrEmployeeCreatedToday,
     getDepartments,
     getHrEmployeesByCompany,
+    getCities,
+    getDistricts,
 } = require('../utils/getEmployeeChangeByCompany')
 const {
     checkIfEmployeeWorkingOrNot,
     checkIfEmployeeWorkingOrNotRetailVersion,
 } = require('../utils/checkIfEmployeeInorOut')
+const { getCounterpartItem } = require('../utils/getDistrictCityCounterpart')
 
 // Database connection configuration
 const dbConfig = {
@@ -430,7 +433,9 @@ const employeeCtrl = {
                 req.body
             if (
                 !currentDBName ||
-                !['opensea12pro', 'opensea12retail'].includes(currentDBName)
+                !['opensea12pro', 'opensea12retail', 'dngretaildb'].includes(
+                    currentDBName
+                )
             )
                 return res.status(403).json({
                     error: true,
@@ -473,6 +478,18 @@ const employeeCtrl = {
                 current_employee_id,
                 emp
             )
+
+            const geolocationBatch = await Promise.all([
+                getCities(odoo_retail),
+                getCities(odoo),
+                getDistricts(odoo_retail),
+                getDistricts(odoo),
+            ])
+
+            const retailCities = geolocationBatch[0]
+            const homeCities = geolocationBatch[1]
+            const retailDistricts = geolocationBatch[2]
+            const homeDistricts = geolocationBatch[3]
 
             // Helper to sync multi-company info
             const syncMultiCompany = async (
@@ -556,6 +573,38 @@ const employeeCtrl = {
                     seagroup_join_date,
                     sea_company_ids,
                 } = emp
+                let [currentCitySource, counterpartCitySource] =
+                    isRetailCurrentDB
+                        ? [retailCities, homeCities]
+                        : [homeCities, retailCities]
+                let [currentDistrictSource, counterpartDistrictSource] =
+                    isRetailCurrentDB
+                        ? [retailDistricts, homeDistricts]
+                        : [homeDistricts, retailDistricts]
+                const updated_permanent_district_id = getCounterpartItem(
+                    currentDistrictSource,
+                    counterpartDistrictSource,
+                    permanent_district_id[0]
+                )
+
+                const updated_temporary_district_id = getCounterpartItem(
+                    currentDistrictSource,
+                    counterpartDistrictSource,
+                    temporary_district_id[0]
+                )
+
+                const updated_permanent_city_id = getCounterpartItem(
+                    currentCitySource,
+                    counterpartCitySource,
+                    permanent_city_id[0]
+                )
+
+                const updated_temporary_city_id = getCounterpartItem(
+                    currentCitySource,
+                    counterpartCitySource,
+                    temporary_city_id[0]
+                )
+
                 const myEmployeeData = {
                     name,
                     company_id: company_id[0],
@@ -567,12 +616,12 @@ const employeeCtrl = {
                     main_phone_number,
                     sea_permanent_addr,
                     permanent_country_id: permanent_country_id[0],
-                    permanent_city_id: permanent_city_id[0],
-                    permanent_district_id: permanent_district_id[0],
+                    permanent_city_id: updated_permanent_city_id,
+                    permanent_district_id: updated_permanent_district_id,
                     sea_temp_addr,
                     temporary_country_id: temporary_country_id[0],
-                    temporary_city_id: temporary_city_id[0],
-                    temporary_district_id: temporary_district_id[0],
+                    temporary_city_id: updated_temporary_city_id,
+                    temporary_district_id: updated_temporary_district_id,
                     identification_id,
                     sea_id_issue_date,
                     id_issue_place: id_issue_place[0],
