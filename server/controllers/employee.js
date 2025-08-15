@@ -433,9 +433,7 @@ const employeeCtrl = {
                 req.body
             if (
                 !currentDBName ||
-                !['opensea12pro', 'opensea12retail', 'dngretaildb'].includes(
-                    currentDBName
-                )
+                !['opensea12pro', 'opensea12retail'].includes(currentDBName)
             )
                 return res.status(403).json({
                     error: true,
