@@ -674,11 +674,7 @@ const employeeCtrl = {
                     .status(400)
                     .json({ msg: 'Vui lòng cung cấp tên database' })
 
-            if (
-                !['opensea12pro', 'opensea12pilot', 'opensea12retail'].includes(
-                    databaseName
-                )
-            )
+            if (!['opensea12pro', 'opensea12retail'].includes(databaseName))
                 return res.status(400).json({ msg: 'Database không hợp lệ' })
 
             if (!company_id)
@@ -723,7 +719,7 @@ const employeeCtrl = {
             let listOfHrEmployeeMultiCompany = []
 
             const odooInstance =
-                databaseName === 'opensea12pilot'
+                databaseName === 'opensea12pro'
                     ? odoo
                     : databaseName === 'opensea12retail'
                     ? odooRetail
