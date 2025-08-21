@@ -603,6 +603,30 @@ const employeeCtrl = {
                     temporary_city_id[0]
                 )
 
+                if (!updated_permanent_city_id)
+                    return res.status(400).json({
+                        error: true,
+                        msg: 'Thành phố thường trú không hợp lệ trong cơ sở dữ liệu đối tác',
+                    })
+
+                if (!updated_temporary_city_id)
+                    return res.status(400).json({
+                        error: true,
+                        msg: 'Thành phố tạm trú không hợp lệ trong cơ sở dữ liệu đối tác',
+                    })
+
+                if (!updated_permanent_district_id)
+                    return res.status(400).json({
+                        error: true,
+                        msg: 'Quận huyện thường trú không hợp lệ trong cơ sở dữ liệu đối tác',
+                    })
+
+                if (!updated_temporary_district_id)
+                    return res.status(400).json({
+                        error: true,
+                        msg: 'Quận huyện tạm trú không hợp lệ trong cơ sở dữ liệu đối tác',
+                    })
+
                 const myEmployeeData = {
                     name,
                     company_id: company_id[0],
