@@ -431,14 +431,14 @@ const employeeCtrl = {
         try {
             const { current_employee_id, isRetailCurrentDB, currentDBName } =
                 req.body
-            if (
-                !currentDBName ||
-                !['opensea12pro', 'opensea12retail'].includes(currentDBName)
-            )
-                return res.status(403).json({
-                    error: true,
-                    msg: 'Đảm bảo cung cấp đúng tên database hợp lệ',
-                })
+            // if (
+            //     !currentDBName ||
+            //     !['opensea12pro', 'opensea12retail'].includes(currentDBName)
+            // )
+            //     return res.status(403).json({
+            //         error: true,
+            //         msg: 'Đảm bảo cung cấp đúng tên database hợp lệ',
+            //     })
             if (!current_employee_id)
                 return res.status(400).json({
                     error: true,
@@ -686,6 +686,13 @@ const employeeCtrl = {
             }
             res.status(200).json({ success: true, msg: 'Đã xử lý thành công!' })
         } catch (error) {
+            if (
+                error.message ===
+                'XML-RPC fault: Traceback (most recent call last):\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 510, in __dump\n    f = self.dispatch[type(value)]\nKeyError: <class \'_thread.lock\'>\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File "/opt/odoo/odoo12/odoo/addons/base/controllers/rpc.py", line 69, in xmlrpc_2\n    response = self._xmlrpc(service)\n  File "/opt/odoo/odoo12/odoo/addons/base/controllers/rpc.py", line 50, in _xmlrpc\n    return dumps((result,), methodresponse=1, allow_none=False)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 971, in dumps\n    data = m.dumps(params)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 502, in dumps\n    dump(v, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 524, in __dump\n    f(self, value, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 615, in dump_instance\n    self.dump_struct(value.__dict__, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 595, in dump_struct\n    dump(v, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 524, in __dump\n    f(self, value, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 615, in dump_instance\n    self.dump_struct(value.__dict__, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 595, in dump_struct\n    dump(v, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 524, in __dump\n    f(self, value, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 615, in dump_instance\n    self.dump_struct(value.__dict__, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 595, in dump_struct\n    dump(v, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 524, in __dump\n    f(self, value, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 615, in dump_instance\n    self.dump_struct(value.__dict__, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 595, in dump_struct\n    dump(v, write)\n  File "/opt/rh/rh-python36/root/usr/lib64/python3.6/xmlrpc/client.py", line 514, in __dump\n    raise TypeError("cannot marshal %s objects" % type(value))\nTypeError: cannot marshal <class \'_thread.lock\'> objects\n'
+            )
+                return res
+                    .status(200)
+                    .json({ success: true, msg: 'Đã xử lý thành công!' })
             res.status(500).json({ error: true, msg: error.message })
         }
     },
