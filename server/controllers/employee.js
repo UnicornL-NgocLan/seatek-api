@@ -439,6 +439,40 @@ const employeeCtrl = {
             //         error: true,
             //         msg: 'Đảm bảo cung cấp đúng tên database hợp lệ',
             //     })
+
+            const mappingCompanyForTwoServer = [
+                { home: 3, retail: 3 },
+                { home: 5, retail: 5 },
+                { home: 6, retail: 6 },
+                { home: 16, retail: 16 },
+                { home: 11, retail: 11 },
+                { home: 9, retail: 9 },
+                { home: 12, retail: 12 },
+                { home: 14, retail: 14 },
+                { home: 2, retail: 2 },
+                { home: 10, retail: 10 },
+                { home: 8, retail: 8 },
+                { home: 4, retail: 4 },
+                { home: 15, retail: 15 },
+                { home: 17, retail: 17 },
+                { home: 20, retail: 20 },
+                { home: 18, retail: 18 },
+                { home: 19, retail: 19 },
+                { home: 21, retail: 21 },
+                { home: 25, retail: 25 },
+                { home: 26, retail: 26 },
+                { home: 27, retail: 27 },
+                { home: 28, retail: 28 },
+                { home: 29, retail: 29 },
+                { home: 30, retail: 30 },
+                { home: 31, retail: 31 },
+                { home: 32, retail: 32 },
+                { home: 34, retail: 34 },
+                { home: 36, retail: 36 },
+                { home: 37, retail: 37 },
+                { home: 39, retail: 38 },
+                { home: 1, retail: 1 },
+            ]
             if (!current_employee_id)
                 return res.status(400).json({
                     error: true,
@@ -501,11 +535,19 @@ const employeeCtrl = {
                     getHrEmployeeMultiCompany(targetDomain, targetId),
                 ])
                 for (const targetMulti of targetList) {
+                    const mappingCompanyIdToTheSource = !isRetailCurrentDB
+                        ? mappingCompanyForTwoServer.find(
+                              (i) => i.retail === targetMulti.company_id[0]
+                          )?.home
+                        : mappingCompanyForTwoServer.find(
+                              (i) => i.home === targetMulti.company_id[0]
+                          )?.retail
+
                     const match = sourceList.find(
                         (i) =>
                             i.s_identification_id ===
                                 targetMulti.s_identification_id &&
-                            i.company_id[0] === targetMulti.company_id[0]
+                            i.company_id[0] === mappingCompanyIdToTheSource
                     )
                     if (match) {
                         await hangeChangeUserCompany(
@@ -627,9 +669,17 @@ const employeeCtrl = {
                         msg: 'Quận huyện tạm trú không hợp lệ trong cơ sở dữ liệu đối tác',
                     })
 
+                const counterPartCompany_id = !isRetailCurrentDB
+                    ? mappingCompanyForTwoServer.find(
+                          (i) => i.home === company_id[0]
+                      )?.retail
+                    : mappingCompanyForTwoServer.find(
+                          (i) => i.retail === company_id[0]
+                      )?.home
+
                 const myEmployeeData = {
                     name,
-                    company_id: company_id[0],
+                    company_id: counterPartCompany_id,
                     s_identification_id,
                     country_id: country_id[0],
                     birthday,
@@ -657,7 +707,7 @@ const employeeCtrl = {
 
                 await hangeChangeUserCompany(
                     counterpartDomain,
-                    company_id[0],
+                    counterPartCompany_id,
                     hr_tool_id
                 )
                 const newEmployeeId = await createHrEmployee(
@@ -667,14 +717,28 @@ const employeeCtrl = {
 
                 await hangeChangeUserCompany(counterpartDomain, 1, hr_tool_id)
                 // Add companies to new employee (excluding main company)
+                // These company IDs are based on the current DB's perspective
                 const currentWorkingCompany = sea_company_ids.filter(
                     (i) => i !== company_id[0]
                 )
                 if (currentWorkingCompany.length > 0) {
+                    // Map current company IDs to counterpart company IDs
+                    const newMappingCompanies = currentWorkingCompany.map(
+                        (compId) => {
+                            const mappedCompany = !isRetailCurrentDB
+                                ? mappingCompanyForTwoServer.find(
+                                      (i) => i.home === compId
+                                  )?.retail
+                                : mappingCompanyForTwoServer.find(
+                                      (i) => i.retail === compId
+                                  )?.home
+                            return mappedCompany
+                        }
+                    )
                     await addCompaniesToEmployee(
                         counterpartDomain,
                         newEmployeeId,
-                        currentWorkingCompany
+                        newMappingCompanies
                     )
                 }
                 await syncMultiCompany(
