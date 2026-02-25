@@ -338,7 +338,7 @@ const employeeCtrl = {
             const rawEmployeeData = await getNumberOfEmployees(odoo)
             const companyIds = [30]
             const mappingCompanyCustomerGroup = [
-                { company_id: 30, familyGroup: 1, exEmployeeGroup: 2 },
+                { company_id: 30, familyGroup: 14, exEmployeeGroup: 2 },
             ]
             const removedDuplicates = []
             for (let i = 0; i < rawEmployeeData.length; i++) {
@@ -817,8 +817,8 @@ const employeeCtrl = {
                 databaseName === 'opensea12pro'
                     ? odoo
                     : databaseName === 'opensea12retail'
-                    ? odooRetail
-                    : ''
+                      ? odooRetail
+                      : ''
             if (odooInstance) {
                 listOfDepartments = await getDepartments(
                     odooInstance,
