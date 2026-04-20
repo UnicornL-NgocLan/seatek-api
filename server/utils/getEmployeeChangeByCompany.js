@@ -83,7 +83,8 @@ const getEmployeeChangeByCompany = async (pool, companyId) => {
                     he.sea_personal_email as email_ca_nhan,
                     he.work_email as email_cong_ty,
                     a.company_id as company_id,
-                    a.department_id
+                    a.department_id,
+                    he.study_field as linh_vuc_nghien_cuu
                 FROM 
                     hr_employee_multi_company a 
                     join hr_employee he on he.id = a.name
