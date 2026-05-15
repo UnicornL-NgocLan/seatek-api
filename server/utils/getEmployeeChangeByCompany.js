@@ -7,7 +7,6 @@ const getEmployeeChangeByCompany = async (pool, companyId) => {
                         date_start AS ngay_chinh_thuc_gia_nhap_sc
                     FROM hr_contract
                     WHERE contract_category = 'contract'
-                        AND type_id = 1
                         AND state NOT IN ('draft')
                     ORDER BY employee_id, date_start
                 ),
@@ -18,7 +17,6 @@ const getEmployeeChangeByCompany = async (pool, companyId) => {
                         date_start AS ngay_vao_cty_chinh_thuc
                     FROM hr_contract
                     WHERE contract_category = 'contract'
-                        AND type_id = 1
                         AND state NOT IN ('draft')
                         AND company_id = $1
                     ORDER BY employee_id, date_start
@@ -31,7 +29,6 @@ const getEmployeeChangeByCompany = async (pool, companyId) => {
                         date_start AS ngay_ky_hop_dong_gan_nhat
                     FROM hr_contract
                     WHERE contract_category = 'contract'
-                        AND type_id = 1
                         AND state NOT IN ('draft')
                         AND company_id = $2
                     ORDER BY employee_id, date_start DESC
