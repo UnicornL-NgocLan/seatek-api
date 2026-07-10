@@ -22,6 +22,8 @@ const {
     getHrEmployeesByCompany,
     getCities,
     getDistricts,
+    getRespartnerByBusinessCode,
+    updateRespartnerField,
 } = require('../utils/getEmployeeChangeByCompany')
 const {
     checkIfEmployeeWorkingOrNot,
@@ -417,6 +419,31 @@ const employeeCtrl = {
                     ...listToActivate,
                     ...listToCreateNewPartner,
                 ])
+
+                // Sau khi tạo xong, cập nhật sea_partner_sale_channel_id = 37
+                // cho các partner vừa được tạo mới
+                if (toAddNew.length > 0) {
+                    const businessCodes = toAddNew.map(
+                        (i) =>
+                            `SeaGroup_${i.name[0]}_${i.s_identification_id}`
+                    )
+                    const newPartnerLookups = businessCodes.map((code) =>
+                        getRespartnerByBusinessCode(odooRetail, code)
+                    )
+                    const newPartnerResults = await Promise.all(newPartnerLookups)
+                    const newPartnerIds = newPartnerResults
+                        .flat()
+                        .map((p) => p.id)
+                        .filter(Boolean)
+
+                    if (newPartnerIds.length > 0) {
+                        await updateRespartnerField(
+                            odooRetail,
+                            newPartnerIds,
+                            { sea_partner_sale_channel_id: 37 }
+                        )
+                    }
+                }
             }
 
             res.status(200).json({

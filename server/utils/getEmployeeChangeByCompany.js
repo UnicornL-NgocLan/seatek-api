@@ -711,6 +711,47 @@ async function getCities(odoo) {
     })
 }
 
+async function getRespartnerByBusinessCode(odoo, seaBusinessCode) {
+    return new Promise((resolve, reject) => {
+        const inParams = []
+        inParams.push([['sea_business_code', '=', seaBusinessCode]])
+        inParams.push(['id', 'name', 'sea_business_code'])
+        inParams.push(0)
+        const params = []
+        params.push(inParams)
+        odoo.execute_kw(
+            'res.partner',
+            'search_read',
+            params,
+            function (err, data) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(data)
+                }
+            }
+        )
+    })
+}
+
+async function updateRespartnerField(odoo, partnerIds, values) {
+    return new Promise((resolve, reject) => {
+        const params = [[partnerIds, values]]
+        odoo.execute_kw(
+            'res.partner',
+            'write',
+            params,
+            function (err, result) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(result)
+                }
+            }
+        )
+    })
+}
+
 module.exports = {
     getEmployeeChangeByCompany,
     getChangeQuantityByCompany,
@@ -731,4 +772,6 @@ module.exports = {
     getHrEmployeesByCompany,
     getDistricts,
     getCities,
+    getRespartnerByBusinessCode,
+    updateRespartnerField,
 }
